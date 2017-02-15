@@ -1,0 +1,7 @@
+---
+  - name: Create ALB target group
+    command: aws elbv2 create-target-group --region {{ region }} --cli-input-json "{{ lookup('template', 'alb-target-group.j2', convert_data=False) }}"
+    register: alb_target_group_created_result
+  - set_fact: alb_target_group_created="{{ alb_target_group_created_result.stdout | from_json }}"
+
+

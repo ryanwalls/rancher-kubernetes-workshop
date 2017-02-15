@@ -1,0 +1,12 @@
+---
+  - name: Deploy default service for Kubernetes
+    hosts: ansible
+    roles:
+      - { role: kubernetes_deployment,
+            kubernetes_deployment_app_name: nginx,
+            kubernetes_deployment_image: nginx,
+            kubernetes_deployment_replicas: 1,
+            kubernetes_deployment_container_port: 80 }
+      - { role: kubernetes_service,
+          kubernetes_service_deployment_name: nginx }
+      - kubernetes_ingress

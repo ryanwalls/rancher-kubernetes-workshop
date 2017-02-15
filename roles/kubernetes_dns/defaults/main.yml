@@ -1,0 +1,2 @@
+---
+  kubernetes_dns_target_alb_name: "{{ env }}-{{ region }}-kubernetes-alb"

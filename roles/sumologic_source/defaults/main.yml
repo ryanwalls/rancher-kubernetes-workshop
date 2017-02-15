@@ -1,0 +1,9 @@
+---
+sumologic_source_sumologic_api_url: https://api.us2.sumologic.com/api/v1
+sumologic_source_body:
+  source:
+    name: "{{ sumologic_source_name }}"
+    description: "{{ sumologic_source_description }}"
+    category: HTTP Collection
+    sourceType: HTTP
+    messagePerRequest: false

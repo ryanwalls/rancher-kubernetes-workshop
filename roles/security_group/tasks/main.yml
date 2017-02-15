@@ -1,0 +1,79 @@
+- set_fact: prefix="{{env}}-"
+  when: useEnv
+- set_fact: prefix=""
+  when: not useEnv
+- set_fact: security_group_name="{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+- name: Create security group
+  ec2_group:
+    name: "{{ security_group_name }}"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    rules_egress:
+      - proto: all
+        from_port: all
+        to_port: all
+        cidr_ip: 0.0.0.0/0
+- name: Open outside world ports
+  ec2_group:
+    name: "{{ security_group_name }}"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: tcp
+        from_port: "{{ item }}"
+        to_port: "{{ item }}"
+        cidr_ip: 0.0.0.0/0
+  with_items:  security_group_outside_world_ports
+  when:  security_group_outside_world_ports is defined
+- name: Open custom ports
+  ec2_group:
+    name: "{{ security_group_name }}"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules: "{{  security_group_custom_port_rules }}"
+  when:  security_group_custom_port_rules is defined
+- name: Open tcp ports between instances in this security group
+  ec2_group:
+    name: "{{ security_group_name }}"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: tcp
+        from_port: "{{ item }}"
+        to_port: "{{ item }}"
+        group_name: "{{ security_group_name }}"
+  with_items:  "{{ security_group_intra_group_tcp_ports }}"
+  when:  security_group_intra_group_tcp_ports is defined
+- name: Open udp ports between instances in this security group
+  ec2_group:
+    name: "{{ security_group_name }}"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: udp
+        from_port: "{{ item }}"
+        to_port: "{{ item }}"
+        group_name: "{{ security_group_name }}"
+  with_items:  "{{ security_group_intra_group_udp_ports }}"
+  when:  "{{ security_group_intra_group_udp_ports is defined }}"
+- name: Open all ports between instances in this security group
+  ec2_group:
+    name: "{{ security_group_name }}"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: all
+        from_port: all
+        to_port: all
+        group_name: "{{ security_group_name }}"
+  when:  "{{ security_group_intra_group_all_ports }}"

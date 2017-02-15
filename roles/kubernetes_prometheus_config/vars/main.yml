@@ -1,0 +1,12 @@
+---
+  kubernetes_prometheus_config_victorops_key:
+  victorops_routing_keys:
+    prod:
+      critical: infrastructure
+      non_critical: noncritical
+    qa:
+      critical: qa
+      non_critical: qa
+    test:
+      critical: qa
+      non_critical: qa

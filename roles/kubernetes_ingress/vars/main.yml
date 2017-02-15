@@ -1,0 +1,31 @@
+---
+kubernetes_ingress_hosts:
+  example1:
+    host: example1{{ kubernetes_ingress_dns_suffix }}.{{ kubernetes_ingress_domain }}
+    http:
+      paths:
+      - backend:
+          serviceName: example1
+          servicePort: 8080
+  grafana:
+    host: grafana{{ kubernetes_ingress_dns_suffix }}.{{ kubernetes_ingress_domain }}
+    http:
+      paths:
+      - backend:
+          servicePort: 3000
+          serviceName: grafana
+  alertmanager:
+    host: alertmanager{{ kubernetes_ingress_dns_suffix }}.{{ kubernetes_ingress_domain }}
+    http:
+      paths:
+      - backend:
+          servicePort: 9093
+          serviceName: alertmanager-main
+  prometheus:
+    host: prometheus{{ kubernetes_ingress_dns_suffix }}.{{ kubernetes_ingress_domain }}
+    http:
+      paths:
+      - backend:
+          servicePort: 9090
+          serviceName: prometheus-k8s
+

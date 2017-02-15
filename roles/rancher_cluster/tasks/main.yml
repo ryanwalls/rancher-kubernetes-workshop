@@ -1,0 +1,75 @@
+---
+  - name: Create launch configuration for the autoscaling group associated with the cluster
+    ec2_lc:
+      # NOTE: If you change the launch configuration, the current instances are not
+      # replaced immediately.  The new launch configuration will be used the
+      # next time a new server is created during scale out.
+      #
+      # LCs are immutable once created.  The caller must provide a new LC version number
+      # using rancher_cluster_launch_configuration_version for any changes to take
+      # affect.
+      name: "{{ rancher_cluster_name }}-lc-{{ rancher_cluster_launch_configuration_version }}"
+      image_id: "{{ rancher_cluster_ami }}"
+      key_name: "{{ rancher_cluster_key_name }}"
+      region: "{{ rancher_cluster_region }}"
+      security_groups: ['{{ rancher_cluster_security_group_name }}' ]
+      instance_type: "{{ rancher_cluster_instance_type }}"
+      state: present
+      instance_profile_name: "{{ rancher_cluster_instance_profile_name }}"
+      user_data: "{{ rancher_cluster_user_data }}"
+      instance_monitoring: true
+      volumes:
+      - device_name: /dev/sda1
+        volume_size: "{{ ancher_cluster_instance_volume_size }}"
+        device_type: gp2
+        delete_on_termination: true
+    register: lc
+  - name: Create auto scaling group
+    ec2_asg:
+      name: "{{ rancher_cluster_name }}-asg"
+      launch_config_name: "{{ lc.name }}"
+      desired_capacity: "{{ rancher_cluster_min_size }}"
+      min_size: "{{ rancher_cluster_min_size }}"
+      max_size: "{{ rancher_cluster_max_size }}"
+      region: "{{ rancher_cluster_region }}"
+      default_cooldown: "{{ rancher_cluster_asg_default_cooldown }}" #seconds
+      replace_all_instances: no
+      health_check_period: 500 # seconds
+      health_check_type: EC2
+      # Only use one availability zone so that the autoscaling group doesn't try to rebalance
+      # itself when simulations complete.  (ASGs automatically try to keep the zones balanced
+      # by terminating instances in some zones and launching them in others.)
+      availability_zones:
+        - us-west-2a
+        - us-west-2b
+        - us-west-2c
+      state: "{{ rancher_cluster_tear_down | ternary('absent', 'present') }}"
+      termination_policies: ClosestToNextInstanceHour
+    register: asg
+  - name: Turn on ASG metrics
+    command: aws autoscaling enable-metrics-collection --auto-scaling-group-name {{ rancher_cluster_name }}-asg --region {{ rancher_cluster_region }} --granularity "1Minute"
+    when: not rancher_cluster_tear_down
+  - name: Configure Scale-in Policy
+    ec2_scaling_policy:
+      region: "{{ rancher_cluster_region }}"
+      name: Decrease server count by 1
+      asg_name: "{{ rancher_cluster_name }}-asg"
+      state: present
+      adjustment_type: ChangeInCapacity
+      min_adjustment_step: 1
+      scaling_adjustment: -1
+      cooldown: 300
+    register: scale_in
+    when: not rancher_cluster_tear_down
+  - name: Configure Scale-out Policy
+    ec2_scaling_policy:
+      region: "{{ rancher_cluster_region }}"
+      name: Increase server count by 1
+      asg_name: "{{ rancher_cluster_name }}-asg"
+      state: present
+      adjustment_type: ChangeInCapacity
+      scaling_adjustment: 1
+    register: scale_out
+    when: not rancher_cluster_tear_down
+  - name: Associate ASG with ALB
+    command: aws autoscaling attach-load-balancer-target-groups --region {{ region }} --auto-scaling-group-name {{ rancher_cluster_name }}-asg --target-group-arns {{ rancher_cluster_target_group_arn }}

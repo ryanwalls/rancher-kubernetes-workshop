@@ -1,0 +1,22 @@
+---
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: alertmanager-main
+  data:
+    alertmanager.yaml: |-
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ['job']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 12h
+        receiver: 'victorOps-receiver'
+      receivers:
+      - name: victorOps-receiver
+        victorops_configs:
+          - api_key: "{{ kubernetes_prometheus_config_victorops_key }}"
+            from: Prometheus
+            routing_key: "{{ victorops_routing_keys[env].critical }}"
+            message: '{% raw %}Alert: {{ .CommonLabels.alertname }}. Summary:{{ .CommonAnnotations.summary }}. RawData: {{ .CommonLabels }}{% endraw %}'

@@ -1,0 +1,2 @@
+---
+kubernetes_quayio_secret_name: rancher-pull-secret

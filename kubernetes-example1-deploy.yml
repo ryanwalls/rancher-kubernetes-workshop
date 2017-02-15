@@ -1,0 +1,14 @@
+---
+  - name: Deploy example 1
+    hosts: ansible
+    roles:
+        - { role: kubernetes_deployment,
+            kubernetes_deployment_app_name: "{{ kubernetes_ingress_hosts.example1.http.paths[0].backend.serviceName }}",
+            kubernetes_deployment_image: gcr.io/google_containers/echoserver,
+            kubernetes_deployment_image_tag: "1.4",
+            kubernetes_deployment_container_port: "{{ kubernetes_ingress_hosts.example1.http.paths[0].backend.servicePort }}" }
+        - { role: kubernetes_service,
+            kubernetes_service_deployment_name: "{{ kubernetes_ingress_hosts.example1.http.paths[0].backend.serviceName }}" }
+        - kubernetes_ingress
+        - { role: kubernetes_dns,
+            kubernetes_dns_record: "{{ kubernetes_ingress_hosts.example1.host }}" }

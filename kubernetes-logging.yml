@@ -1,0 +1,13 @@
+---
+  - name: Add logging to Kubernetes
+    hosts: ansible
+    roles:
+      - { role: sumologic_collector,
+          sumologic_collector_name: "kubernetes-{{ env }}",
+          sumologic_collector_description:  "Collector for handling logs from Kubernetes cluster"}
+      - { role: sumologic_source,
+          sumologic_source_name: "kubernetes-{{ env }}-http",
+          sumologic_source_description:  "HTTP source for Kubernetes cluster",
+          sumologic_source_collector_id: "{{ sumologic_collector_id_fact }}"}
+      - { role: kubernetes_logging,
+          kubernetes_logging_sumologic_source_url: "{{ sumologic_source_url_fact }}" }

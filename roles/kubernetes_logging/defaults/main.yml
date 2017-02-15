@@ -1,0 +1,3 @@
+---
+kubernetes_logging_daemonset_name: fluentd
+kubernetes_logging_sumologic_secret_name: sumologic

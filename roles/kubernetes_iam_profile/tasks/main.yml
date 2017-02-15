@@ -1,0 +1,13 @@
+---
+  - name: Create kubernetes iam role
+    iam:
+      iam_type: role
+      name: "{{ kubernetes_iam_profile_role_name }}"
+      state: present
+  - name: Add S3 policy
+    iam_policy:
+      iam_type: role
+      iam_name: "{{ kubernetes_iam_profile_role_name }}"
+      policy_name: "{{ env }}S3SimulationBucketAccessGetPut"
+      policy_json: "{{ lookup( 'template', 's3-policy.json.j2') }}"
+      state: present

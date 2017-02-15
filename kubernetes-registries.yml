@@ -1,0 +1,5 @@
+---
+  - name: Setup registry access
+    hosts: ansible
+    roles:
+      - kubernetes_quayio

@@ -1,0 +1,24 @@
+---
+  apiVersion: extensions/v1beta1
+  kind: Deployment
+  metadata:
+    name: "{{ kubernetes_deployment_name }}"
+  spec:
+    replicas: "{{ kubernetes_deployment_replicas }}"
+    minReadySeconds: 0
+    template:
+      metadata:
+        labels:
+          app: "{{ kubernetes_deployment_app_name }}"
+      spec:
+        containers:
+          - name: "{{ kubernetes_deployment_app_name }}"
+            image: "{{ kubernetes_deployment_image }}:{{ kubernetes_deployment_image_tag }}"
+            ports:
+              - name: liveness-port
+                containerPort: "{{ kubernetes_deployment_container_port }}"
+            env:
+              - name: ENV
+                value: "{{ env }}"
+        imagePullSecrets:
+          - name: rancher-pull-secret # This name must match what is setup in the kubernetes-quayio role

@@ -1,0 +1,8 @@
+---
+  - set_fact:
+      kubernetes_ingress_dns_suffix: ""
+    when: "{{ env == 'prod' }}"
+  - set_fact:
+      ingress_rules_fact: "{{  kubernetes_ingress_hosts.values() }}"
+  - name: Create kubernetes ingress
+    shell: echo "{{ kubernetes_ingress_template | to_nice_yaml }}" | kubectl apply --namespace={{ kubernetes_ingress_namespace }} -f -

@@ -1,0 +1,2 @@
+---
+  kubernetes_iam_profile_role_name: kubernetes-iam-role-{{ env }}

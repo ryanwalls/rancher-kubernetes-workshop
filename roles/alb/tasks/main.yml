@@ -1,0 +1,87 @@
+---
+- name: Create alb security group
+  ec2_group:
+    name: "{{env}}-{{ region }}-sg-{{ alb_app_name }}-alb"
+    description: Security group for {{ alb_app_name }} alb
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+      - proto: all
+        from_port: all
+        to_port: all
+        cidr_ip: 0.0.0.0/0
+  register: alb_security_group
+- name: Open port 80 on ALB security group
+  ec2_group:
+    name: "{{env}}-{{ region }}-sg-{{ alb_app_name }}-alb"
+    description: Security group for {{ alb_app_name }} alb
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+  when: "{{ alb_allow_http }}"
+- name: Setting up Application Load Balancer and listen on 443
+  elb_application_lb:
+    name: "{{ env }}-{{ region }}-{{ alb_app_name }}-alb"
+    state: "{{ (tear_down and env == 'dev') | ternary('absent', 'present') }}"
+    region: "{{ region }}"
+    security_groups: "{{alb_security_group.group_id}}"
+    tags:
+      env: "{{ env }}"
+    idle_timeout: 600 # seconds
+    # TODO dynamically get subnets
+    subnets:
+      - subnet-b34bedc4 # us-west-2a
+      - subnet-7a0a8a1f # us-west-2b
+      - subnet-0dbd7a54 # us-west-2c
+    listeners:
+      - Protocol: HTTPS
+        Port: 443
+        Certificates:
+          - CertificateArn: "{{ alb_certificate_arn }}"
+        SslPolicy: ELBSecurityPolicy-2015-05
+        DefaultActions:
+          - Type: forward
+            TargetGroupName: "{{ alb_default_action_target_group }}"
+  when: not {{ alb_allow_http }}
+  register: secure_alb
+- name: Setting up Application Load Balancer and listen on 443 and 80
+  elb_application_lb:
+    name: "{{ env }}-{{ region }}-{{ alb_app_name }}-alb"
+    state: "{{ (tear_down and env == 'dev') | ternary('absent', 'present') }}"
+    region: "{{ region }}"
+    security_groups: "{{alb_security_group.group_id}}"
+    idle_timeout: 600 # seconds
+    tags:
+      env: "{{ env }}"
+    subnets:
+      - subnet-b34bedc4 # us-west-2a
+      - subnet-7a0a8a1f # us-west-2b
+      - subnet-0dbd7a54 # us-west-2c
+    listeners:
+      - Protocol: HTTPS
+        Port: 443
+        Certificates:
+          - CertificateArn: "{{ alb_certificate_arn }}"
+        SslPolicy: ELBSecurityPolicy-2015-05
+        DefaultActions:
+          - Type: forward
+            TargetGroupName: "{{ alb_default_action_target_group }}"
+      - Protocol: HTTP
+        Port: 80
+        DefaultActions:
+          - Type: forward
+            TargetGroupName: "{{ alb_default_action_target_group }}"
+  when: "{{ alb_allow_http }}"
+  register: unsecure_alb
+- name: Set the alb variable
+  set_fact:
+    alb: "{{ secure_alb if secure_alb.alb is defined else unsecure_alb }}"

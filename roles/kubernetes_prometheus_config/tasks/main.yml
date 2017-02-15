@@ -1,0 +1,8 @@
+---
+  - name: Apply all files in "files" directory
+    command: kubectl apply -f {{ item }}
+    with_fileglob: "*.yml"
+  - name: Apply alertmanager config
+    shell: echo "{{ lookup('template', 'alertmanager-config.yml', convert_data=False) }}" | kubectl apply -f -
+
+

@@ -1,0 +1,28 @@
+---
+kubernetes_kubeconfig_server: "{{ rancher_api.host }}/{{ kubernetes_api[env].path }}"
+kubernetes_kubeconfig_environment: "{{ env }}"
+kubernetes_kubeconfig_username: "{{ kubernetes_api[env].username }}"
+kubernetes_kubeconfig_password: "{{ kubernetes_api[env].password }}"
+kubernetes_kubeconfig_insecure_skip_tls_verify: true
+kubernetes_kubeconfig_destination: ~/.kube/config
+
+kubernetes_kubeconfig_template:
+    apiVersion: v1
+    kind: Config
+    clusters:
+      - cluster:
+          api-version: v1
+          insecure-skip-tls-verify: "{{ kubernetes_kubeconfig_insecure_skip_tls_verify }}"
+          server: "{{ kubernetes_kubeconfig_server }}"
+        name: "{{ kubernetes_kubeconfig_environment }}"
+    contexts:
+      - context:
+          cluster: "{{ kubernetes_kubeconfig_environment }}"
+          user: "{{ kubernetes_kubeconfig_environment }}"
+        name: "{{ kubernetes_kubeconfig_environment }}"
+    current-context: "{{ kubernetes_kubeconfig_environment }}"
+    users:
+      - name: "{{ kubernetes_kubeconfig_environment }}"
+        user:
+          username: "{{ kubernetes_kubeconfig_username }}"
+          password: "{{ kubernetes_kubeconfig_password }}"

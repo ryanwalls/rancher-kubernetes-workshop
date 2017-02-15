@@ -1,0 +1,42 @@
+---
+  - set_fact:
+      sources_url_fact: "{{ sumologic_source_sumologic_api_url }}/collectors/{{ sumologic_source_collector_id }}/sources"
+  - name: Get current sumologic source information
+    uri:
+      url: "{{ sources_url_fact }}"
+      method: GET
+      user: "{{ sumologic_access_id }}"
+      password: "{{ sumologic_access_key }}"
+      return_content: yes
+    register: sources_fact
+  - name: Get existing source with same name
+    set_fact:
+      existing_source_fact: "{{ item }}"
+    when: "{{ item.name == sumologic_source_name }}"
+    with_items: "{{ sources_fact.json.sources }}"
+  - name: Create source if it does not exist
+    uri:
+      url: "{{ sources_url_fact }}"
+      method: POST
+      body: "{{ sumologic_source_body | to_json }}"
+      status_code: 201
+      body_format: json
+      user: "{{ sumologic_access_id }}"
+      password: "{{ sumologic_access_key }}"
+      return_content: yes
+    when: "{{ existing_source_fact is not defined }}"
+    register: created_source_fact
+  - debug:
+      msg: "{{ created_source_fact }}"
+    when: "{{ created_source_fact is defined }}"
+  - debug:
+      msg: "{{ existing_source_fact }}"
+    when: "{{ existing_source_fact is defined }}"
+  - name: Get URL from created source
+    set_fact:
+      sumologic_source_url_fact: "{{ created_source_fact.json.source.url }}"
+    when: "{{ created_source_fact.location is defined }}"
+  - name: Get URL from existing collector
+    set_fact:
+      sumologic_source_url_fact: "{{ existing_source_fact.url }}"
+    when: "{{ existing_source_fact is defined }}"

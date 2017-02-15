@@ -1,0 +1,19 @@
+---
+  - name: Get information for kubernetes ALB
+    command: aws elbv2 --region {{ region }} describe-load-balancers --names {{ kubernetes_dns_target_alb_name }}
+    register: kubernetes_alb_fact
+  - set_fact:
+      kubernetes_alb_fact_json: "{{ kubernetes_alb_fact.stdout | from_json }}"
+  - name: Create route53 A record to ALB
+    route53:
+      alias: true
+      alias_hosted_zone_id: "{{ kubernetes_alb_fact_json.LoadBalancers[0].CanonicalHostedZoneId }}"
+      command: create
+      overwrite: true
+      record: "{{ kubernetes_dns_record }}"
+      zone: 3dsim.com
+      type: A
+      value: "{{ kubernetes_alb_fact_json.LoadBalancers[0].DNSName }}"
+
+
+

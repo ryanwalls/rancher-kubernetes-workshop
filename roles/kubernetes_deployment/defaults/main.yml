@@ -1,0 +1,6 @@
+---
+kubernetes_deployment_replicas: 2
+kubernetes_deployment_name: "{{ kubernetes_deployment_app_name }}"
+kubernetes_deployment_image_tag: latest
+
+

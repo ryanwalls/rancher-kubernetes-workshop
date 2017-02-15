@@ -1,0 +1,21 @@
+---
+  - name: Check if secret exists
+    command: kubectl get secret {{ kubernetes_logging_sumologic_secret_name }}
+    register: get_secret_result
+    failed_when: "{{ get_secret_result.stderr != '' and 'NotFound' not in get_secret_result.stderr }}"
+  - name: Delete secret for collector url if it exists
+    command: kubectl delete secret {{ kubernetes_logging_sumologic_secret_name }}
+    when: "{{ kubernetes_logging_sumologic_secret_name in get_secret_result.stdout }}"
+  - name: Create secret for collector url
+    command: kubectl create secret generic {{ kubernetes_logging_sumologic_secret_name }} --from-literal=collector-url={{ kubernetes_logging_sumologic_source_url }}
+    # Currently not easy to update a DaemonSet, see https://kubernetes.io/docs/admin/daemons/#updating-a-daemonset
+  - name: Check if daemonset exists
+    command: kubectl get daemonsets {{ kubernetes_logging_daemonset_name }}
+    register: get_daemonset_result
+    failed_when: "{{ get_daemonset_result.stderr != '' and 'NotFound' not in get_daemonset_result.stderr }}"
+    # Delete, but don't remove pods.  To really update you must delete pods
+  - name: Delete daemonset if it exists
+    command: kubectl delete daemonset {{ kubernetes_logging_daemonset_name }} --cascade=true
+    when: "{{ kubernetes_logging_daemonset_name in get_daemonset_result.stdout }}"
+  - name: Create kubernetes daemonset for logging
+    shell: echo "{{ lookup('template', 'fluentd.daemonset.yaml.j2', convert_data=False) }}" | kubectl create --record -f -

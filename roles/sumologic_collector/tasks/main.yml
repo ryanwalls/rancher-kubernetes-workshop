@@ -1,0 +1,42 @@
+---
+  - name: Get current sumologic collector information
+    uri:
+      url: "{{ sumologic_collector_sumologic_api_url }}/collectors"
+      method: GET
+      user: "{{ sumologic_access_id }}"
+      password: "{{ sumologic_access_key }}"
+      return_content: yes
+    register: collectors_fact
+  - name: Get existing collector with same name
+    set_fact:
+      existing_collector_fact: "{{ item }}"
+    when: "{{ item.name == sumologic_collector_name }}"
+    with_items: "{{ collectors_fact.json.collectors }}"
+  - name: Create collector if it does not exist
+    uri:
+      url: "{{ sumologic_collector_sumologic_api_url }}/collectors"
+      method: POST
+      body: "{{ sumologic_collector_collector_body | to_json }}"
+      status_code: 201
+      body_format: json
+      user: "{{ sumologic_access_id }}"
+      password: "{{ sumologic_access_key }}"
+      return_content: yes
+    when: "{{ existing_collector_fact is not defined }}"
+    register: created_collector_fact
+  - debug:
+      msg: "{{ created_collector_fact }}"
+    when: "{{ created_collector_fact is defined }}"
+  - debug:
+      msg: "{{ existing_collector_fact }}"
+    when: "{{ existing_collector_fact is defined }}"
+  - name: Get URL from created collector
+    set_fact:
+      sumologic_collector_url_fact: "{{ sumologic_collector_sumologic_api_url }}/collectors/{{ created_collector_fact.json.collector.id }}"
+      sumologic_collector_id_fact: "{{ created_collector_fact.json.collector.id }}"
+    when: "{{ created_collector_fact.location is defined }}"
+  - name: Get URL from existing collector
+    set_fact:
+      sumologic_collector_url_fact: "{{ sumologic_collector_sumologic_api_url }}/collectors/{{ existing_collector_fact.id }}"
+      sumologic_collector_id_fact:  "{{ existing_collector_fact.id }}"
+    when: "{{ existing_collector_fact is defined }}"

@@ -1,0 +1,12 @@
+---
+  - name: Setup routes for prometheus operator
+    hosts: ansible
+    roles:
+      - kubernetes_ingress
+      - { role: kubernetes_dns,
+          kubernetes_dns_record: "{{ kubernetes_ingress_hosts.grafana.host }}" }
+      - { role: kubernetes_dns,
+          kubernetes_dns_record: "{{ kubernetes_ingress_hosts.alertmanager.host }}" }
+      - { role: kubernetes_dns,
+          kubernetes_dns_record: "{{ kubernetes_ingress_hosts.prometheus.host }}" }
+      - kubernetes_prometheus_config

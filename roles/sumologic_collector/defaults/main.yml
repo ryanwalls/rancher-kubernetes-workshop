@@ -1,0 +1,8 @@
+---
+sumologic_collector_sumologic_api_url: https://api.us2.sumologic.com/api/v1
+sumologic_collector_collector_body:
+  collector:
+    name: "{{ sumologic_collector_name }}"
+    description: "{{ sumologic_collector_description }}"
+    category: HTTP Collection
+    collectorType: Hosted

@@ -1,0 +1,26 @@
+---
+# us-west-2
+region: us-west-2
+keyName:
+env: dev
+
+# Ubuntu 14.04
+default_ubuntu_ami: ami-01f05461
+# NOTE: Ubuntu 16.04 comes with python3 which isn't supported by ansible as of version 2.2
+
+kubernetes_api:
+    test:
+        path: r/projects/<your environment id>/kubernetes
+        username:
+        password:
+
+rancher_api:
+    host:
+    environments_path: v2-beta/projects
+    test:
+        access_key:
+        secret_key:
+        id:
+
+sumologic_access_id:
+sumologic_access_key:

@@ -1,0 +1,3 @@
+---
+alb_allow_http: false
+alb_certificate_arn:

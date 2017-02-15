@@ -1,0 +1,10 @@
+---
+  - name: Ensures destination exists
+    file: path={{ kubernetes_kubeconfig_destination | dirname }} state=directory recurse=yes
+  - name: Create kubeconfig file
+    template:
+      src: kubeconfig.j2
+      dest: "{{ kubernetes_kubeconfig_destination }}"
+    register: kubeconfig
+
+

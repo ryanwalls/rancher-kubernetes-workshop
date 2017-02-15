@@ -1,0 +1,46 @@
+---
+  apiVersion: extensions/v1beta1
+  kind: DaemonSet
+  metadata:
+    name: {{ kubernetes_logging_daemonset_name }}
+    labels:
+      app: {{ kubernetes_logging_daemonset_name }}
+      version: v1
+  spec:
+    template:
+      metadata:
+        labels:
+          name: {{ kubernetes_logging_daemonset_name }}
+      spec:
+        volumes:
+        - name: pos-files
+          emptyDir: {}
+        - name: host-logs
+          hostPath:
+            path: /var/log/
+        - name: docker-logs
+          hostPath:
+            path: /var/lib/docker/
+        containers:
+        - image: 3dsim/fluentd-kubernetes-sumologic:debian
+          name: {{ kubernetes_logging_daemonset_name }}
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: host-logs
+            mountPath: /mnt/log/
+            readOnly: true
+          - name: docker-logs
+            mountPath: /var/lib/docker/
+            readOnly: true
+          - name: pos-files
+            mountPath: /mnt/pos/
+          securityContext:
+            privileged: true
+          env:
+          - name: ENV
+            value: "{{ env }}"
+          - name: COLLECTOR_URL
+            valueFrom:
+              secretKeyRef:
+                name: sumologic
+                key: collector-url

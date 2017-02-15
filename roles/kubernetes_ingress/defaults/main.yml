@@ -1,0 +1,18 @@
+---
+kubernetes_ingress_dns_suffix: "-{{ env }}"
+kubernetes_ingress_domain:
+kubernetes_ingress_namespace: default
+kubernetes_ingress_template:
+  apiVersion: extensions/v1beta1
+  kind: Ingress
+  metadata:
+    name: simplelb
+    annotations:
+      scale: "3"
+  spec:
+    # TODO have default be a 404 page and use a /status path for ALB health checks
+    # Something like: https://github.com/kubernetes/contrib/tree/master/404-server
+    backend:
+      serviceName: nginx
+      servicePort: 80
+    rules: "{{ ingress_rules_fact }}"

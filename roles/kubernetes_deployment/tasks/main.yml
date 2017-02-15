@@ -1,0 +1,5 @@
+---
+  - name: Create kubernetes deployment
+    shell: echo "{{ lookup('template', 'deployment.yml', convert_data=False) }}" | kubectl apply --record -f -
+
+

@@ -1,0 +1,16 @@
+{
+    \"Name\": \"{{ alb_target_group_name }}\",
+    \"Protocol\": \"{{ alb_target_group_protocol }}\",
+    \"Port\": {{ alb_target_group_port }},
+    \"HealthCheckProtocol\": \"{{ alb_target_group_health_check_protocol }}\",
+    \"HealthCheckPort\": \"{{ alb_target_group_health_check_port }}\",
+    \"HealthCheckPath\": \"{{ alb_target_group_health_check_path }}\",
+    \"HealthCheckIntervalSeconds\": {{ alb_target_group_health_check_interval_seconds }},
+    \"HealthCheckTimeoutSeconds\": {{ alb_target_group_health_check_timeout_seconds }},
+    \"HealthyThresholdCount\": {{ alb_target_group_healthy_threshold_count }},
+    \"UnhealthyThresholdCount\": {{ alb_target_group_unhealthy_threshold_count }},
+    \"VpcId\": \"{{ alb_target_group_vpc_id }}\",
+    \"Matcher\": {
+        \"HttpCode\": \"{{ alb_target_group_healthy_response_code }}\"
+    }
+}

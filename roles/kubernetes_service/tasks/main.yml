@@ -1,0 +1,14 @@
+---
+  - name: Check if service exists
+    command: kubectl get service {{ kubernetes_service_deployment_name }}
+    register: get_service_result
+    failed_when: "{{ get_service_result.stderr != '' and 'NotFound' not in get_service_result.stderr }}"
+    # TODO determine impact of deleting on service uptime.  Perhaps will update instead of delete.
+  - name: Delete service if it exists
+    command: kubectl delete service {{ kubernetes_service_deployment_name }}
+    when: "{{ kubernetes_service_deployment_name in get_service_result.stdout }}"
+  - name: Create kubernetes service from deployment
+    command: kubectl expose deployment {{ kubernetes_service_deployment_name }}
+
+
+

@@ -1,0 +1,10 @@
+---
+alb_target_group_vpc_id:
+alb_target_group_health_check_protocol: HTTP
+alb_target_group_health_check_port: 80
+alb_target_group_health_check_path: /
+alb_target_group_health_check_interval_seconds: 30
+alb_target_group_health_check_timeout_seconds: 5
+alb_target_group_healthy_threshold_count: 5
+alb_target_group_unhealthy_threshold_count: 2
+alb_target_group_healthy_response_code: 200
