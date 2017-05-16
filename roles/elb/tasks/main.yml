@@ -39,12 +39,11 @@
     security_group_ids: "{{elb_security_group.group_id}}"
     idle_timeout: 600 # seconds
     listeners:
-      # TODO uncomment if SSL cert is required for workshop
-      # - protocol: ssl
-      #   load_balancer_port: 443
-      #   instance_protocol: tcp
-      #   instance_port: "{{ elb_instance_port }}"
-      #   ssl_certificate_id: "arn:aws:iam::<Your account number>:server-certificate/cert"
+      - protocol: ssl
+        load_balancer_port: 443
+        instance_protocol: tcp
+        instance_port: "{{ elb_instance_port }}"
+        ssl_certificate_id: "{{ elb_ssl_cert_arn }}"
   when: not {{ elb_allow_http }}
   register: secure_elb
 - name: Setting up Elastic Load Balancer and listen on 443 and 80
@@ -58,12 +57,11 @@
     security_group_ids: "{{elb_security_group.group_id}}"
     idle_timeout: 600 # seconds
     listeners:
-    # TODO uncomment if SSL cert is required for workshop
-      # - protocol: ssl
-      #   load_balancer_port: 443
-      #   instance_protocol: tcp
-      #   instance_port: "{{ elb_instance_port }}"
-      #   ssl_certificate_id: "arn:aws:iam::<Your account number>:server-certificate/cert"
+      - protocol: ssl
+        load_balancer_port: 443
+        instance_protocol: tcp
+        instance_port: "{{ elb_instance_port }}"
+        ssl_certificate_id: "{{ elb_ssl_cert_arn }}"
       - protocol: tcp
         load_balancer_port: 80
         instance_protocol: tcp

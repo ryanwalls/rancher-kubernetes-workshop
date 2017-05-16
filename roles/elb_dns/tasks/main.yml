@@ -11,7 +11,7 @@
       command: create
       overwrite: true
       record: "{{ elb_dns_record }}"
-      zone: 3dsim.com
+      zone: "{{ elb_dns_zone }}"
       type: A
       value: "{{ elb_fact_json.LoadBalancerDescriptions[0].DNSName }}"
 

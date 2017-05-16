@@ -7,6 +7,11 @@
     name: "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
     description: Security group for {{ appName }} servers
     region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: "{{ ansibleConfigurationPort }}"
+        to_port: "{{ ansibleConfigurationPort }}"
+        cidr_ip: 0.0.0.0/0
     rules_egress:
       - proto: all
         from_port: all

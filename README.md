@@ -18,12 +18,8 @@ Requirements: You will need to have an AWS account set up and able to provision 
 * AWS account  https://portal.aws.amazon.com/gp/aws/developer/registration/index.html
 * Environment variables set for AWS access.  `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.  See
 http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html for how to generate a key and secret.  You will probably need to create a user.  If you do, give them admin or power user privileges.
-* (To be determined if necessary) SSL cert for a domain that you control.  See https://aws.amazon.com/blogs/aws/new-aws-certificate-manager-deploy-ssltls-based-apps-on-aws
-If you need to register a domain, .me.uk is cheapest on route53 for $8.
-* Run the following command in the root of this repo to create a container called `ansible`
-```
-docker run -it -e AWS_ACCESS_KEY_ID=`echo $AWS_ACCESS_KEY_ID` -e AWS_SECRET_ACCESS_KEY=`echo $AWS_SECRET_ACCESS_KEY` --name ansible ryanwalls/ansible-aws:v2.2.1.0-1-k8s tail -f /dev/null
-```
+* SSL cert for a domain that you control.  See https://aws.amazon.com/blogs/aws/new-aws-certificate-manager-deploy-ssltls-based-apps-on-aws
+If you need to register a domain, .me.uk is cheapest on route53 for $8.  Set it up in us-east (N Virginia) region.
 
 ## Overview of workshop
 * Create Rancher server
@@ -33,13 +29,22 @@ docker run -it -e AWS_ACCESS_KEY_ID=`echo $AWS_ACCESS_KEY_ID` -e AWS_SECRET_ACCE
 * Update applications in cluster
 * Setup prometheus, grafana, and alertmanager for monitoring/alerting
 * Demo centralized logging
-* (Extra credit) Setup monitoring of service using prometheus
+* (Extra credit) Setup monitoring of application using prometheus
 * (Extra credit 2) Setup centralized logging using ELK stack
 
-## Create Rancher server
-* Fill in a password in `rancher-server.yml` lines 67 and 92
-* Create an ssh key in AWS and fill in `keyName` and `ansible_ssh_private_key_file` variables in `group_vars/all/main.yml` with name and location of an ssh key you've created in AWS and downloaded to your machine.  TODO automate
-* (SSL cert?)
+## Create Rancher server (Optional)
+* Run the following command in the root of this repo to create a container called `ansible`
+```
+docker run --restart=always -d -v `echo ~`/.ssh:/root/.ssh -e AWS_ACCESS_KEY_ID=`echo $AWS_ACCESS_KEY_ID` -e AWS_SECRET_ACCESS_KEY=`echo $AWS_SECRET_ACCESS_KEY` --name ansible ryanwalls/ansible-aws:v2.2.1.0-1-k8s tail -f /dev/null
+```
+* (Optional) Change password in `rancher-server.yml` lines 67 and 92
+* Create an ssh key pair in AWS and fill in `keyName` and `ansible_ssh_private_key_file` variables in `group_vars/all/main.yml` with name and location of an ssh key you've created in AWS and downloaded to your machine.  
+Use a relative path.  Download your key to ~/.ssh on your desktop.  See http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair.  Ideally this would be automated.
+* If you haven't already, you'll need to setup an SSL cert.  See instructions in "Prerequisites" section.  Once setup, paste the ARN into `rancher-server.yml` line 9
+* Let's create the rancher server now.  Run the following from the root of this project.
+```
+docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inventory/ -vvvv --extra-vars "env=workshop" rancher-server.yml
+```
 
 
 * Fill in `rancher_api` variables in `group_vars/all/main.yml`

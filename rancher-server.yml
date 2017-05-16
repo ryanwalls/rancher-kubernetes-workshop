@@ -2,8 +2,12 @@
   - name: Setup ELB for rancher
     hosts: ansible
     roles:
-      - { role: elb, elb_app_name: "rancher-{{ env }}", elb_zones: [us-west-2a, us-west-2b, us-west-2c], elb_instance_port: 8080 }
-      - { role: elb_dns, elb_dns_target_elb_name: "{{ elb.elb.name }}", elb_dns_record: "rancher-{{ env }}.3dsim.com" }
+      - { role: elb, 
+          elb_app_name: "rancher-{{ env }}", 
+          elb_zones: [us-west-2a, us-west-2b, us-west-2c], 
+          elb_instance_port: 8080, 
+          elb_ssl_cert_arn: "arn:aws:acm:us-west-2:532562325099:certificate/c6a094ee-bc4e-4586-80cf-aaa7c3c6d3e8" }
+      - { role: elb_dns, elb_dns_target_elb_name: "{{ elb.elb.name }}", elb_dns_record: "rancher-{{ env }}.ryanwalls.com" , elb_dns_zone: "ryanwalls.com" }
   - name: Allow websockets on ELB for rancher
     hosts: ansible
     vars:
@@ -51,7 +55,7 @@
         # TODO Use AWS command line instead so we get SSD instances.  See https://github.com/ansible/ansible-modules-core/issues/633#issuecomment-69713089
       - name: Create database
         rds:
-          backup_retention: 7
+          backup_retention: 0
           command: create
           db_engine: MySQL
           engine_version: 5.7.16
@@ -64,7 +68,7 @@
           size: 10
           db_name: cattle
           username: rancher
-          password:
+          password: the__password
           vpc_security_groups:  "{{ sg.group_id }}"
           wait: true
           wait_timeout: 1500 # creating an RDS instance can take a looonnng time
@@ -89,6 +93,6 @@
           pull: true
           restart_policy: unless-stopped
           state: started
-          command: "--db-host {{ hostvars.localhost.database.instance.endpoint }} --db-port 3306 --db-user rancher --db-pass <use db password from line 67 here> --db-name cattle"
+          command: "--db-host {{ hostvars.localhost.database.instance.endpoint }} --db-port 3306 --db-user rancher --db-pass the__password --db-name cattle"
 
 

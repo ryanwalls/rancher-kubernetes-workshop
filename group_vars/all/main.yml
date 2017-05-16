@@ -1,8 +1,8 @@
 ---
 # us-west-2
 region: us-west-2
-keyName:
-ansible_ssh_private_key_file: ~/.ssh/<your key name>.pem
+keyName: kubernetes-workshop
+ansible_ssh_private_key_file: ~/.ssh/kubernetes-workshop.pem
 
 env: dev
 
