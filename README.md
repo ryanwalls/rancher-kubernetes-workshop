@@ -15,11 +15,11 @@ Requirements: You will need to have an AWS account set up and able to provision 
 
 ## Prerequisites
 * Docker installed.  https://www.docker.com
-* AWS account  https://portal.aws.amazon.com/gp/aws/developer/registration/index.html
+* AWS account https://portal.aws.amazon.com/gp/aws/developer/registration/index.html
 * Environment variables set for AWS access.  `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.  See
 http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html for how to generate a key and secret.  You will probably need to create a user.  If you do, give them admin or power user privileges.
 * SSL cert for a domain that you control.  See https://aws.amazon.com/blogs/aws/new-aws-certificate-manager-deploy-ssltls-based-apps-on-aws
-If you need to register a domain, .me.uk is cheapest on route53 for $8.  Set it up in us-east (N Virginia) region.
+If you need to register a domain, .me.uk is cheapest on route53 for $8.  Only use certificate manager in us-east (N Virginia) region.
 * Install Kubernetes `kubectl` command line tool, v1.5.4.  See https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-binary-via-curl.  On Mac you'll run something like this:
 ```
 curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.5.4/bin/darwin/amd64/kubectl
@@ -35,7 +35,8 @@ sudo mv ./kubectl /usr/local/bin/kubectl
 * Update applications in cluster
 * Setup prometheus, grafana, and alertmanager for monitoring/alerting
 * Demo centralized logging
-* (Extra credit) Setup monitoring of application using prometheus
+* Auto scale your cluster
+* (Extra credit 1) Setup monitoring of application using prometheus
 * (Extra credit 2) Setup centralized logging using ELK stack
 
 ## Create Rancher server (Optional)
@@ -66,11 +67,15 @@ Rancher has created https://try.rancher.com which has a Rancher server (non prod
 * Fill in `default_ssl_cert_arn` in `group_vars/all/main.yml` with the ARN of your SSL cert if you didn't do it earlier.
 * Fill in `default_vpc_id` in `group_vars/all/main.yml` with the VPC id of your default vpc.  The default VPC can be found in your ec2 dashboard on the right hand side.
 * Fill in `default_hosted_zone` in `group_vars/all/main.yml` with the domain of your route53 hosted zone
+* Go to Rancher -> Environment -> Manage Environments -> Click Pencil next to Kubernetes at bottom of page -> Edit Config -> Select dropdown
+  * Change cloud provider to AWS
+  * Change "Plane Isolation" to "required"
 * Create environment in Rancher with Kubernetes as the orchestration tool
 * Create an environment specific API key (API -> Keys -> Advanced Options -> Add Environment API Key)
 * Copy API key into `group_vars/all` with the matching environment.
 * Also update the environment id in `group_vars/all`.  Id is in the URL for rancher e.g. `https://rancher.3dsim.com/env/1a644/api/keys`, so `1a644` is the id.
-* Run `kubernetes-cluster.yml` with env variable set from the root of this repo.  e.g.
+* Get the subnets for your AWS account and update the `alb_subnets` variable in `roles/alb/defaults/main.yml`.  To get your subnets, navigate to https://us-west-2.console.aws.amazon.com/vpc/home?region=us-west-2#subnets:
+* Run `kubernetes-cluster.yml` with from the root of this repo.  e.g.
 
 ```
 docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inventory/ -vvvv --extra-vars "env=slc" kubernetes-cluster.yml
@@ -83,8 +88,14 @@ Put username and password for kubernetes in `group_vars/all`
 * Setup default service route (used for healthchecks) `kubernetes-default-service.yml`
 * To deploy an application look at `kubernetes-example1-deploy.yml`.  Make sure and add the ingress vars in
 `roles/kubernetes_ingress/vars/main.yml` to match the application you're deploying.
+* Then run:
+```
+docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inventory/ -vvvv --extra-vars "env=slc" kubernetes-example1-deploy.yml
+```
 
 ## Update applications in cluster
+* Modify `kubernetes-example1-deploy.yml`
+* Redeploy it
 
 ## Setup prometheus, grafana, and alertmanager for monitoring/alerting
 * Clone https://github.com/3DSIM/kube-prometheus.
@@ -101,8 +112,8 @@ Put username and password for kubernetes in `group_vars/all`
 * Fill in `sumologic_access_id` and `sumologic_access_key` variables in `group_vars/all/main.yml`
 * Setup logging by running `kubernetes-logging.yml`
 
-
-
+## Auto scale your cluster
+* Setup auto scaling by running `kubernetes-cluster-autoscaler.yml`
 
 ## Sample kubeconfig
 Sample kubeconfig:

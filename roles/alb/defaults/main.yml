@@ -1,9 +1,6 @@
 ---
 alb_instance_port:
-alb_zones: [us-west-2a, us-west-2b]
-# subnet-b34bedc4 - us-west-2a
-# subnet-7a0a8a1f - us-west-2b
-# subnet-0dbd7a54 - us-west-2c
-alb_subnets: [subnet-b34bedc4, subnet-7a0a8a1f, subnet-0dbd7a54]
+alb_zones: [us-west-2a, us-west-2b, us-west-2c]
+alb_subnets: [subnet-3859005f, subnet-b64681ed, subnet-c2ddac8b]
 alb_allow_http: false
 alb_ssl_cert_arn: "{{ default_ssl_cert_arn }}"
