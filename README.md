@@ -54,7 +54,10 @@ Use a relative path.  Download your key to ~/.ssh on your desktop.  See http://d
 docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inventory/ -vvvv --extra-vars "env=slc" rancher-server.yml
 ```
 
-## Setup auth for rancher (optional)
+### If you have trouble creating own server
+Rancher has created https://try.rancher.com which has a Rancher server (non production use) setup for you.
+
+## Setup auth for rancher (optional, skip if using try.rancher.com)
 * From Rancher click... Admin -> Access Control
 * Follow instructions to setup Github authentication
 
@@ -65,7 +68,7 @@ docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inven
 * Fill in `default_hosted_zone` in `group_vars/all/main.yml` with the domain of your route53 hosted zone
 * Create environment in Rancher with Kubernetes as the orchestration tool
 * Create an environment specific API key (API -> Keys -> Advanced Options -> Add Environment API Key)
-* Copy key into `group_vars/all` with the matching environment.
+* Copy API key into `group_vars/all` with the matching environment.
 * Also update the environment id in `group_vars/all`.  Id is in the URL for rancher e.g. `https://rancher.3dsim.com/env/1a644/api/keys`, so `1a644` is the id.
 * Run `kubernetes-cluster.yml` with env variable set from the root of this repo.  e.g.
 
@@ -75,9 +78,6 @@ docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inven
 
 * Once kubernetes environment is up and running, generate a key for kubernetes.  In Rancher navigate to Kubernetes -> CLI -> Generate Config.
 Put username and password for kubernetes in `group_vars/all`
-* Setup logging by running `kubernetes-logging.yml`
-* Setup monitoring
-
 
 ## Deploy applications to cluster
 * Setup default service route (used for healthchecks) `kubernetes-default-service.yml`
@@ -91,16 +91,17 @@ Put username and password for kubernetes in `group_vars/all`
 * Make sure you have setup your kube config file for the right environment.  In rancher, Kubernetes -> CLI -> Generate config.  Put config in ~/.kube/config.
   * If you have multiple contexts (See sample kubeconfig below), you can switch between them by running `kubectl config set current-context <context name>`
 * Execute `./hack/cluster-monitoring/deploy`
-* Go back to infrastructure project and setup victorops routing keys in `roles/kubernetes_prometheus_config/vars/main.yml`
+* (Optional, for Victorops alerts) Come back to this project and setup victorops routing keys in `roles/kubernetes_prometheus_config/vars/main.yml`
+* (Optional, for Victorops alerts) Fill in `kubernetes_prometheus_config_victorops_key` in `roles/kubernetes_prometheus_config/vars/main.yml` with the key for your victorops account.
 * Run `kubernetes-monitoring.yml`
 
 ## Demo centralized logging
-
-
-
-
+* Create a free sumologic account
+* Generate access keys for your account: https://help.sumologic.com/Manage/Security/Access_Keys
 * Fill in `sumologic_access_id` and `sumologic_access_key` variables in `group_vars/all/main.yml`
-* Fill in `kubernetes_prometheus_config_victorops_key` in `roles/kubernetes_prometheus_config/vars/main.yml` with the key for your victorops account.
+* Setup logging by running `kubernetes-logging.yml`
+
+
 
 
 ## Sample kubeconfig
