@@ -1,0 +1,18 @@
+---
+  - name: Get information for the ELB
+    command: aws elb --region {{ region }} describe-load-balancers --load-balancer-names {{ elb_dns_target_elb_name }}
+    register: elb_fact
+  - set_fact:
+      elb_fact_json: "{{ elb_fact.stdout | from_json }}"
+  - name: Create route53 A record to ELB
+    route53:
+      alias: true
+      alias_hosted_zone_id: "{{ elb_fact_json.LoadBalancerDescriptions[0].CanonicalHostedZoneNameID }}"
+      command: create
+      overwrite: true
+      record: "{{ elb_dns_record }}"
+      zone: 3dsim.com
+      type: A
+      value: "{{ elb_fact_json.LoadBalancerDescriptions[0].DNSName }}"
+
+

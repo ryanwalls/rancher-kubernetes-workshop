@@ -1,0 +1,11 @@
+---
+  # NOTE: iam_policy in ryanwalls/ansible-aws:v2.2.1.0-1-k8s
+  # doesn't honor the region parameter. If running in govcloud,
+  # set the environment variable "AWS_REGION=us-gov-west-1" on
+  # the command line.
+  - name: Create rancher iam role
+    iam:
+      iam_type: role
+      name: "{{ rancher_iam_profile_role_name }}"
+      state: present
+      region: "{{ region }}"

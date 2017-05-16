@@ -1,19 +1,48 @@
-# meetup-docker-in-production
-Supporting code/diagrams for my Docker in Production talk given at the SLC Docker Meetup on Feb 15, 2017.
+# rancher-kubernetes-workshop
+Supporting code/diagrams for my devopsdays SLC workshop on running Kubernetes with Rancher given on May 16, 2017.
 
 This repo has all the code necessary to create a k8s cluster in a Rancher environment with logging to Sumologic, DNS through AWS route53,
 and alerting through VictorOps.  This is configured to match what we do at 3dsim.  You will probably want to modify many things to match your needs.
 
+In this workshop you will learn how to deploy a production grade, highly available Kubernetes cluster in AWS using Rancher and Ansible.  Almost all steps will be automated so that the finished product truly embodies Infrastructure as Code.  By the end of the workshop, we will have a fully running kubernetes cluster, authentication/authorization in place for cluster management, monitoring and alerting using Prometheus, graphs of server performance using Grafana, rolling deploys of application code, centralized logging, and more.
+
+Read more about the various tools/platforms:
+https://kubernetes.io
+http://rancher.com
+https://www.ansible.com
+
+Requirements: You will need to have an AWS account set up and able to provision new servers.  You will also need to have git installed to download the workshop material.  A recent version of Docker is also required (https://www.docker.com).  If you don't have an AWS account, you can sign up for one here: https://portal.aws.amazon.com/gp/aws/developer/registration/index.html
+
 ## Prerequisites
-* Rancher server 1.4.0 running and accessible to outside world
+* Docker installed.  https://www.docker.com
+* AWS account  https://portal.aws.amazon.com/gp/aws/developer/registration/index.html
 * Environment variables set for AWS access.  `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.  See
-http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html for how to generate a key and secret.
+http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html for how to generate a key and secret.  You will probably need to create a user.  If you do, give them admin or power user privileges.
+* (To be determined if necessary) SSL cert for a domain that you control.  See https://aws.amazon.com/blogs/aws/new-aws-certificate-manager-deploy-ssltls-based-apps-on-aws
+If you need to register a domain, .me.uk is cheapest on route53 for $8.
 * Run the following command in the root of this repo to create a container called `ansible`
 ```
 docker run -it -e AWS_ACCESS_KEY_ID=`echo $AWS_ACCESS_KEY_ID` -e AWS_SECRET_ACCESS_KEY=`echo $AWS_SECRET_ACCESS_KEY` --name ansible ryanwalls/ansible-aws:v2.2.1.0-1-k8s tail -f /dev/null
 ```
+
+## Overview of workshop
+* Create Rancher server
+* Setup auth for rancher
+* Create Kubernetes cluster
+* Deploy applications to cluster
+* Update applications in cluster
+* Setup prometheus, grafana, and alertmanager for monitoring/alerting
+* Demo centralized logging
+* (Extra credit) Setup monitoring of service using prometheus
+* (Extra credit 2) Setup centralized logging using ELK stack
+
+## Create Rancher server
+* Fill in a password in `rancher-server.yml` lines 67 and 92
+* Create an ssh key in AWS and fill in `keyName` and `ansible_ssh_private_key_file` variables in `group_vars/all/main.yml` with name and location of an ssh key you've created in AWS and downloaded to your machine.  TODO automate
+* (SSL cert?)
+
+
 * Fill in `rancher_api` variables in `group_vars/all/main.yml`
-* Fill in `keyName` variable in `group_vars/all/main.yml` with name of an ssh key you've created in AWS
 * Fill in `sumologic_access_id` and `sumologic_access_key` variables in `group_vars/all/main.yml`
 * Fill in `alb_certificate_arn` in `roles/alb/defaults/main.yml` with the ARN of your SSL cert
 * Fill in `alb_target_group_vpc_id` in `roles/alb_target_group/defaults/main.yml` with the VPC id of your default vpc
@@ -21,8 +50,7 @@ docker run -it -e AWS_ACCESS_KEY_ID=`echo $AWS_ACCESS_KEY_ID` -e AWS_SECRET_ACCE
 * Fill in `kubernetes_prometheus_config_victorops_key` in `roles/kubernetes_prometheus_config/vars/main.yml` with the key for your victorops account.
 
 ## Setting up a Kubernetes cluster administered through Rancher
-* Add 3dsim catalog, https://github.com/3DSIM/rancher-catalog.git, to rancher.  Admin -> Settings -> Add Catalog
-* Create environment with 3dsim Kubernetes as the orchestration tool
+* Create environment with Kubernetes as the orchestration tool
 * Create an environment specific API key (API -> Keys -> Advanced Options -> Add Environment API Key)
 * Copy key into `group_vars/all` with the matching environment.
 * Also update the environment id in `group_vars/all`.  Id is in the URL for rancher e.g. `https://rancher.3dsim.com/env/1a644/api/keys`, so `1a644` is the id.

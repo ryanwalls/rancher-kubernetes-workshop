@@ -1,0 +1,3 @@
+---
+  rancher_iam_profile_role_name: rancher-iam-role
+  rancher_iam_profile_arn_root: aws

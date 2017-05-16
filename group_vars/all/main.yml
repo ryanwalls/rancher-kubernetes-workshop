@@ -2,11 +2,13 @@
 # us-west-2
 region: us-west-2
 keyName:
+ansible_ssh_private_key_file: ~/.ssh/<your key name>.pem
+
 env: dev
 
-# Ubuntu 14.04
-default_ubuntu_ami: ami-01f05461
-# NOTE: Ubuntu 16.04 comes with python3 which isn't supported by ansible as of version 2.2
+default_amazon_ami: ami-f173cc91
+# Ubuntu 16.04
+default_ubuntu_ami: ami-efd0428f
 
 kubernetes_api:
     test:
