@@ -1,5 +1,5 @@
 ---
-kubernetes_kubeconfig_server: "{{ rancher_api.host }}/{{ kubernetes_api[env].path }}"
+kubernetes_kubeconfig_server: "{{ rancher_api[env].host }}/{{ kubernetes_api[env].path }}"
 kubernetes_kubeconfig_environment: "{{ env }}"
 kubernetes_kubeconfig_username: "{{ kubernetes_api[env].username }}"
 kubernetes_kubeconfig_password: "{{ kubernetes_api[env].password }}"
