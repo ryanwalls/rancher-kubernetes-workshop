@@ -15,17 +15,29 @@ default_ubuntu_ami: ami-efd0428f
 
 kubernetes_api:
     slc:
-        path: r/projects/<your environment id>/kubernetes
+        path: r/projects/<project id>/kubernetes
         username:
         password:
 
 rancher_api:
     environments_path: v2-beta/projects
     slc:
-        host:
+        host: https://try.rancher.com
         access_key:
         secret_key:
         id:
 
 sumologic_access_id:
 sumologic_access_key:
+
+victorops_api_key:
+victorops_routing_keys:
+    prod:
+      critical: infrastructure
+      non_critical: noncritical
+    qa:
+      critical: qa
+      non_critical: qa
+    slc:
+      critical: qa
+      non_critical: qa
