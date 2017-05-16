@@ -16,7 +16,7 @@
       receivers:
       - name: victorOps-receiver
         victorops_configs:
-          - api_key: "{{ kubernetes_prometheus_config_victorops_key }}"
+          - api_key: "{{ victorops_api_key }}"
             from: Prometheus
             routing_key: "{{ victorops_routing_keys[env].critical }}"
             message: '{% raw %}Alert: {{ .CommonLabels.alertname }}. Summary:{{ .CommonAnnotations.summary }}. RawData: {{ .CommonLabels }}{% endraw %}'

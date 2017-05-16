@@ -102,8 +102,8 @@ docker cp . ansible:ansible && docker exec -it ansible ansible-playbook -i inven
 * Make sure you have setup your kube config file for the right environment.  In rancher, Kubernetes -> CLI -> Generate config.  Put config in ~/.kube/config.
   * If you have multiple contexts (See sample kubeconfig below), you can switch between them by running `kubectl config set current-context <context name>`
 * Execute `./hack/cluster-monitoring/deploy`
-* (Optional, for Victorops alerts) Come back to this project and setup victorops routing keys in `roles/kubernetes_prometheus_config/vars/main.yml`
-* (Optional, for Victorops alerts) Fill in `kubernetes_prometheus_config_victorops_key` in `roles/kubernetes_prometheus_config/vars/main.yml` with the key for your victorops account.
+* (Optional, for Victorops alerts) Come back to this project and setup victorops routing keys in `group_vars/all/main.yml`
+* (Optional, for Victorops alerts) Fill in `victorops_api_key` in `group_vars/all/main.yml` with the key for your victorops account.
 * Run `kubernetes-monitoring.yml`
 
 ## Demo centralized logging
