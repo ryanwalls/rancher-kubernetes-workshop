@@ -20,5 +20,10 @@
             env:
               - name: ENV
                 value: "{{ env }}"
-        imagePullSecrets:
-          - name: rancher-pull-secret # This name must match what is setup in the kubernetes-quayio role
+            resources:
+              requests:
+                memory: "{{ kubernetes_deployment_container_request_memory }}"
+                cpu:    "{{ kubernetes_deployment_container_request_cpu }}"
+              limits:
+                memory: "{{ kubernetes_deployment_container_limit_memory }}"
+                cpu: "{{ kubernetes_deployment_container_limit_cpu }}"
