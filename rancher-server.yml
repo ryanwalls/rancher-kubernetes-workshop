@@ -2,12 +2,12 @@
   - name: Setup ELB for rancher
     hosts: ansible
     roles:
-      - { role: elb, 
-          elb_app_name: "rancher-{{ env }}", 
-          elb_zones: [us-west-2a, us-west-2b, us-west-2c], 
-          elb_instance_port: 8080, 
+      - { role: elb,
+          elb_app_name: "rancher-{{ env }}",
+          elb_zones: [us-west-2a, us-west-2b, us-west-2c],
+          elb_instance_port: 8080,
           elb_ssl_cert_arn: "arn:aws:acm:us-west-2:532562325099:certificate/c6a094ee-bc4e-4586-80cf-aaa7c3c6d3e8" }
-      - { role: elb_dns, elb_dns_target_elb_name: "{{ elb.elb.name }}", elb_dns_record: "rancher-{{ env }}.ryanwalls.com" , elb_dns_zone: "ryanwalls.com" }
+      - { role: elb_dns, elb_dns_target_elb_name: "{{ elb.elb.name }}", elb_dns_record: "rancher-{{ env }}.{{ default_hosted_zone }}" , elb_dns_zone: "{{ default_hosted_zone }}" }
   - name: Allow websockets on ELB for rancher
     hosts: ansible
     vars:

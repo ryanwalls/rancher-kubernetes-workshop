@@ -1,2 +1,3 @@
 ---
   kubernetes_dns_target_alb_name: "{{ env }}-{{ region }}-kubernetes-alb"
+  kubernetes_dns_zone: "{{ default_hosted_zone }}"
