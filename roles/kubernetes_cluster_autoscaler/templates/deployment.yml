@@ -1,0 +1,44 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ kubernetes_cluster_autoscaler_name }}"
+  labels:
+    k8s-app: "{{ kubernetes_cluster_autoscaler_name }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: "{{ kubernetes_cluster_autoscaler_name }}"
+  template:
+    metadata:
+      labels:
+        k8s-app: "{{ kubernetes_cluster_autoscaler_name }}"
+    spec:
+        containers:
+          - name: "{{ kubernetes_cluster_autoscaler_name }}"
+            image: "{{ kubernetes_cluster_autoscaler_image }}:{{ kubernetes_cluster_autoscaler_image_tag }}"
+            resources:
+              limits:
+                cpu: 100m
+                memory: 300Mi
+              requests:
+                cpu: 100m
+                memory: 300Mi
+            command:
+              - ./cluster-autoscaler
+              - --skip-nodes-with-system-pods=true
+              - --cloud-provider=aws
+              - --scale-down-delay=5m
+              - --nodes="{{ kubernetes_cluster_autoscaler_core_asg_min }}{% raw %}:{% endraw %}{{ kubernetes_cluster_autoscaler_core_asg_max }}{% raw %}:{% endraw %}{{ kubernetes_cluster_autoscaler_core_asg }}"
+            env:
+              - name: AWS_REGION
+                value: "{{ region }}"
+            volumeMounts:
+              - name: ssl-certs
+                mountPath: "/etc/ssl/certs/ca-certificates.crt"
+                readOnly: true
+        volumes:
+          - name: ssl-certs
+            hostPath:
+              path: "/etc/ssl/certs/ca-certificates.crt"
