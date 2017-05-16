@@ -20,7 +20,7 @@
       instance_monitoring: true
       volumes:
       - device_name: /dev/sda1
-        volume_size: "{{ ancher_cluster_instance_volume_size }}"
+        volume_size: "{{ rancher_cluster_host_volume_size }}"
         device_type: gp2
         delete_on_termination: true
     register: lc
@@ -28,7 +28,6 @@
     ec2_asg:
       name: "{{ rancher_cluster_name }}-asg"
       launch_config_name: "{{ lc.name }}"
-      desired_capacity: "{{ rancher_cluster_min_size }}"
       min_size: "{{ rancher_cluster_min_size }}"
       max_size: "{{ rancher_cluster_max_size }}"
       region: "{{ rancher_cluster_region }}"
@@ -36,18 +35,22 @@
       replace_all_instances: no
       health_check_period: 500 # seconds
       health_check_type: EC2
-      # Only use one availability zone so that the autoscaling group doesn't try to rebalance
-      # itself when simulations complete.  (ASGs automatically try to keep the zones balanced
-      # by terminating instances in some zones and launching them in others.)
-      availability_zones:
-        - us-west-2a
-        - us-west-2b
-        - us-west-2c
+      availability_zones: "{{ rancher_cluster_availability_zones }}"
       state: "{{ rancher_cluster_tear_down | ternary('absent', 'present') }}"
       termination_policies: ClosestToNextInstanceHour
+      # Tags field doesn't work currently.  See https://github.com/ansible/ansible/issues/23234
+      # tags:
+      #   - env: "{{ env }}"
     register: asg
+    # Can remove this when "tags" field works for ec2_asg above
+  - name: Add tags to ASG
+    command: aws autoscaling create-or-update-tags --tags "ResourceId={{ rancher_cluster_name }}-asg,ResourceType=auto-scaling-group,Key=env,Value={{ env }},PropagateAtLaunch=true" --region {{ rancher_cluster_region }}
+    when: not rancher_cluster_tear_down
   - name: Turn on ASG metrics
     command: aws autoscaling enable-metrics-collection --auto-scaling-group-name {{ rancher_cluster_name }}-asg --region {{ rancher_cluster_region }} --granularity "1Minute"
+    when: not rancher_cluster_tear_down
+  - name: Turn off rebalancing of cluster across availability zones
+    command: aws autoscaling suspend-processes --auto-scaling-group-name {{ rancher_cluster_name }}-asg --scaling-processes AZRebalance --region {{ rancher_cluster_region }}
     when: not rancher_cluster_tear_down
   - name: Configure Scale-in Policy
     ec2_scaling_policy:
@@ -73,3 +76,4 @@
     when: not rancher_cluster_tear_down
   - name: Associate ASG with ALB
     command: aws autoscaling attach-load-balancer-target-groups --region {{ region }} --auto-scaling-group-name {{ rancher_cluster_name }}-asg --target-group-arns {{ rancher_cluster_target_group_arn }}
+    when: "{{ rancher_cluster_target_group_arn is defined }}"
