@@ -6,22 +6,34 @@
   rancher_cluster_security_group_name: "{{ security_group_name }}"
   rancher_cluster_min_size: 0
   rancher_cluster_max_size: 25
-  ancher_cluster_instance_volume_size: 30
   rancher_cluster_asg_default_cooldown: 660 # seconds
   tear_down: false
   rancher_cluster_tear_down: "{{ tear_down }}"
+  rancher_cluster_availability_zones: ['us-west-2a','us-west-2b','us-west-2c']
   rancher_cluster_agent_version: v1.2.0
+  rancher_cluster_host_volume_size: 30
+  rancher_cluster_is_data_plane: false
+  rancher_cluster_is_orchestration_plane: false
+  rancher_cluster_is_compute_plane: false
+
+  rancher_cluster_compute_plane_host_labels: "{{ rancher_cluster_is_compute_plane | ternary('&compute=true', '') }}"
+  rancher_cluster_orchestration_plane_host_labels: "{{ rancher_cluster_is_orchestration_plane | ternary('&orchestration=true&nopods=true', '') }}"
+  rancher_cluster_data_plane_host_labels: "{{ rancher_cluster_is_data_plane | ternary('&etcd=true&nopods=true', '') }}"
 
   # If you change this field, you need to bump rancher_cluster_launch_configuration_version
   rancher_cluster_user_data: |
           #!/bin/bash -xe
           exec > /tmp/userdata.log 2>&1
+          curl https://releases.rancher.com/install-docker/1.12.sh | sh \
 
-          wget -qO- https://test.docker.com/ | sh
+          public_dns=`curl http://169.254.169.254/latest/meta-data/public-hostname` \
+          instance_id=`curl http://169.254.169.254/latest/meta-data/instance-id` \
+          private_ip=`curl http://169.254.169.254/latest/meta-data/local-ipv4/` \
 
           # Need to get private IP for amazon instances to be able to ping each other
           sudo docker run -d --privileged \
-                -e CATTLE_AGENT_IP="$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')" \
+                -e CATTLE_HOST_LABELS="instanceid=$instance_id&publicdns=$public_dns&type={{ rancher_cluster_instance_type }}{{ rancher_cluster_compute_plane_host_labels }}{{ rancher_cluster_orchestration_plane_host_labels }}{{ rancher_cluster_data_plane_host_labels }}" \
+                -e CATTLE_AGENT_IP="$private_ip" \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v /var/lib/rancher:/var/lib/rancher \
                 rancher/agent:{{ rancher_cluster_agent_version }} {{ rancher_cluster_registration_url }}

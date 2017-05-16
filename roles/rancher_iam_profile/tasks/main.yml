@@ -1,0 +1,7 @@
+---
+  - name: Create rancher iam role
+    iam:
+      iam_type: role
+      name: "{{ rancher_iam_profile_role_name }}"
+      state: present
+      region: "{{ region }}"

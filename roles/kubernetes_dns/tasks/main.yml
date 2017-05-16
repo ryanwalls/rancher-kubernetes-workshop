@@ -11,7 +11,7 @@
       command: create
       overwrite: true
       record: "{{ kubernetes_dns_record }}"
-      zone: 3dsim.com
+      zone: "{{ kubernetes_dns_zone }}"
       type: A
       value: "{{ kubernetes_alb_fact_json.LoadBalancers[0].DNSName }}"
 

@@ -2,5 +2,8 @@
 kubernetes_deployment_replicas: 2
 kubernetes_deployment_name: "{{ kubernetes_deployment_app_name }}"
 kubernetes_deployment_image_tag: latest
-
+kubernetes_deployment_container_request_memory: 100Mi
+kubernetes_deployment_container_request_cpu: 100m
+kubernetes_deployment_container_limit_memory: 1Gi
+kubernetes_deployment_container_limit_cpu: 1000m
 

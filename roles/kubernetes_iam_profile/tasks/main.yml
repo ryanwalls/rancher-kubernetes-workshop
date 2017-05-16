@@ -4,10 +4,19 @@
       iam_type: role
       name: "{{ kubernetes_iam_profile_role_name }}"
       state: present
-  - name: Add S3 policy
+      region: "{{ region }}"
+  - name: Add auto scaling instance protection policy
     iam_policy:
       iam_type: role
       iam_name: "{{ kubernetes_iam_profile_role_name }}"
-      policy_name: "{{ env }}S3SimulationBucketAccessGetPut"
-      policy_json: "{{ lookup( 'template', 's3-policy.json.j2') }}"
+      policy_name: "AutoScalingAccess"
+      policy_json: "{{ lookup( 'template', 'autoscale-policy.json.j2') }}"
       state: present
+  - name: Create rancher AWS policy
+    iam_policy:
+      iam_type: role
+      iam_name: "{{ kubernetes_iam_profile_role_name }}"
+      policy_name: "RancherAWSPolicy"
+      state: present
+      policy_json: "{{ lookup( 'template', 'rancher-policy.json.j2') }}"
+

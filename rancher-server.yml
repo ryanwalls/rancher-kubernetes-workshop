@@ -1,0 +1,98 @@
+---
+  - name: Setup ELB for rancher
+    hosts: ansible
+    roles:
+      - { role: elb,
+          elb_app_name: "rancher-{{ env }}",
+          elb_zones: [us-west-2a, us-west-2b, us-west-2c],
+          elb_instance_port: 8080,
+          elb_ssl_cert_arn: "{{ default_ssl_cert_arn }}" }
+      - { role: elb_dns, elb_dns_target_elb_name: "{{ elb.elb.name }}", elb_dns_record: "rancher-{{ env }}.{{ default_hosted_zone }}" , elb_dns_zone: "{{ default_hosted_zone }}" }
+  - name: Allow websockets on ELB for rancher
+    hosts: ansible
+    vars:
+      proxy_policy_name: rancher-elb-policy
+    tasks:
+      - name: create policy
+        command: aws elb create-load-balancer-policy --load-balancer-name {{ elb.elb.name }} --policy-name {{ proxy_policy_name }} --policy-type-name ProxyProtocolPolicyType --policy-attributes AttributeName=ProxyProtocol,AttributeValue=true --region {{ region }}
+      - name: set policy on 443
+        command: aws elb set-load-balancer-policies-for-backend-server --load-balancer-name {{ elb.elb.name }} --instance-port 443 --policy-names {{ proxy_policy_name }} --region {{ region }}
+      - name: set policy on 8080
+        command: aws elb set-load-balancer-policies-for-backend-server --load-balancer-name {{ elb.elb.name }} --instance-port 8080 --policy-names {{ proxy_policy_name }} --region {{ region }}
+  - name: Create rancher server(s)
+    hosts: ansible
+    roles:
+      - rancher_iam_profile
+      - { role: simple_ec2,
+          ami_id: '{{ default_amazon_ami }}',
+          appName: rancher,
+          instance_type: 'm4.xlarge',
+          useEnv: true,
+          volumeSize: 30,
+          simple_ec2_instance_profile_name: "{{ rancher_iam_profile_role_name }}",
+          simple_ec2_elb_name: "{{ elb.elb.name }}",
+          simple_ec2_outside_world_ports: [443, 80, 8080] } # TODO remove 8080 and instead open security group 8080 just to ELB
+  - name: Create rancher database
+    hosts: ansible
+    tasks:
+      - name: Create database security group
+        ec2_group:
+          name: "{{ env }}-{{ region }}-sg-rancher-database"
+          description: Security group for rancher database
+          region: "{{ region }}"
+          rules:
+            - proto: tcp
+              from_port: 3306
+              to_port: 3306
+              group_name: "{{ env }}-{{ region }}-sg-rancher-web"
+          rules_egress:
+            - proto: all
+              from_port: all
+              to_port: all
+              cidr_ip: 0.0.0.0/0
+          state: present
+        register: sg
+        # TODO Use AWS command line instead so we get SSD instances.  See https://github.com/ansible/ansible-modules-core/issues/633#issuecomment-69713089
+      - name: Create database
+        rds:
+          backup_retention: 0
+          command: create
+          db_engine: MySQL
+          engine_version: 5.7.16
+          instance_name: rancher-database-{{ env }}
+          instance_type: db.t2.medium
+          multi_zone: no
+          port: 3306
+          publicly_accessible: yes
+          region: "{{ region }}"
+          size: 10
+          db_name: cattle
+          username: rancher
+          password: the__password
+          vpc_security_groups:  "{{ sg.group_id }}"
+          wait: true
+          wait_timeout: 1500 # creating an RDS instance can take a looonnng time
+        register: database
+  - name: Install docker
+    hosts: ec2hosts-rancher
+    sudo: true
+    remote_user: ec2-user
+    roles:
+      - { role: docker_install_centos }
+  - name: Install rancher server
+    hosts: ec2hosts-rancher
+    sudo: true
+    remote_user: ec2-user
+    tasks:
+      - name: start container
+        docker_container:
+          name: rancher-server
+          image: rancher/server:v1.5.5
+          published_ports:
+            - 8080:8080
+          pull: true
+          restart_policy: unless-stopped
+          state: started
+          command: "--db-host {{ hostvars.localhost.database.instance.endpoint }} --db-port 3306 --db-user rancher --db-pass the__password --db-name cattle"
+
+

@@ -3,7 +3,7 @@
     hosts: ansible
     tasks:
     - set_fact:
-        environment_url_fact: "{{ rancher_api.host }}/{{ rancher_api.environments_path }}/{{ rancher_api[env].id }}"
+        environment_url_fact: "{{ rancher_api[env].host }}/{{ rancher_api.environments_path }}/{{ rancher_api[env].id }}"
     - name: Get environment information
       uri:
         url: "{{ environment_url_fact }}"
@@ -59,10 +59,31 @@
           security_group_custom_port_rules: [{proto: tcp, from_port: 80, to_port: 80, group_id: "{{ alb.load_balancer.security_groups[0] }}"}]}
       - { role: rancher_cluster,
           rancher_cluster_instance_profile_name: "{{ kubernetes_iam_profile_role_name }}", # This gets set in kubernetes_iam_profile role
-          rancher_cluster_name: "{{ env }}-kubernetes-cluster",
-          rancher_cluster_instance_type: c4.xlarge,
-          rancher_cluster_launch_configuration_version: 9,
+          rancher_cluster_name: "{{ env }}-kubernetes-etcd-cluster",
+          rancher_cluster_instance_type: t2.small,
+          rancher_cluster_launch_configuration_version: 1,
           rancher_cluster_min_size: 3,
+          rancher_cluster_max_size: 3,
+          rancher_cluster_is_data_plane: true,
+          rancher_cluster_host_volume_size: 30,
+          rancher_cluster_registration_url: "{{ existing_tokens_fact.json['data'][0]['registrationUrl'] }}" }
+      - { role: rancher_cluster,
+          rancher_cluster_instance_profile_name: "{{ kubernetes_iam_profile_role_name }}", # This gets set in kubernetes_iam_profile role
+          rancher_cluster_name: "{{ env }}-kubernetes-orchestration-cluster",
+          rancher_cluster_instance_type: t2.medium,
+          rancher_cluster_launch_configuration_version: 1,
+          rancher_cluster_min_size: 2,
+          rancher_cluster_max_size: 2,
+          rancher_cluster_is_orchestration_plane: true,
+          rancher_cluster_host_volume_size: 30,
+          rancher_cluster_registration_url: "{{ existing_tokens_fact.json['data'][0]['registrationUrl'] }}" }
+      - { role: rancher_cluster,
+          rancher_cluster_instance_profile_name: "{{ kubernetes_iam_profile_role_name }}", # This gets set in kubernetes_iam_profile role
+          rancher_cluster_name: "{{ env }}-kubernetes-cluster",
+          rancher_cluster_instance_type: t2.medium,
+          rancher_cluster_launch_configuration_version: 1,
+          rancher_cluster_min_size: 2,
+          rancher_cluster_is_compute_plane: true,
           rancher_cluster_registration_url: "{{ existing_tokens_fact.json['data'][0]['registrationUrl'] }}",
           rancher_cluster_target_group_arn: "{{ alb_target_group_created.TargetGroups[0].TargetGroupArn }}" }
 

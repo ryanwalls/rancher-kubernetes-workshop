@@ -1,0 +1,127 @@
+- set_fact: prefix="{{env}}-"
+  when: "{{ useEnv }}"
+- set_fact: prefix=""
+  when: "{{ not useEnv }}"
+- name: Create security group for simple ec2 server
+  ec2_group:
+    name: "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: "{{ ansibleConfigurationPort }}"
+        to_port: "{{ ansibleConfigurationPort }}"
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+      - proto: all
+        from_port: all
+        to_port: all
+        cidr_ip: 0.0.0.0/0
+- name: Open outside world ports
+  ec2_group:
+    name: "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: tcp
+        from_port: "{{ item }}"
+        to_port: "{{ item }}"
+        cidr_ip: 0.0.0.0/0
+  with_items: "{{ simple_ec2_outside_world_ports }}"
+  when: "{{ simple_ec2_outside_world_ports is defined }}"
+- name: Open custom ports
+  ec2_group:
+    name: "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+    description: Security group for {{ appName }} servers
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules: "{{ simple_ec2_custom_port_rules }}"
+  when: "{{ simple_ec2_custom_port_rules is defined }}"
+- name: "Remove old ec2 instances if 'deleteExisting' is true"
+  ec2:
+    key_name: "{{ keyName }}"
+    region: "{{ region }}"
+    group: "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+    instance_type: "{{ instance_type }}"
+    image: "{{ ami_id }}"
+    wait: true
+    exact_count: 0
+    count_tag:
+      Name: "{{ prefix }}{{ region }}-ec2-{{ appName }}-web-server"
+    instance_tags:
+      Name: "{{ prefix }}{{ region }}-ec2-{{ appName }}-web-server"
+      env: "{{ env }}"
+  when: "{{ deleteExisting|bool or tear_down|bool }}"
+- name: "Provision server"
+  ec2:
+    key_name: "{{ keyName }}"
+    region: "{{ region }}"
+    group: "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+    instance_type: "{{ instance_type }}"
+    image: "{{ ami_id }}"
+    wait: true
+    exact_count: "{{ simple_ec2_server_count }}"
+    count_tag:
+      Name: "{{ prefix }}{{ region }}-ec2-{{ appName }}-web-server"
+    instance_tags:
+      Name: "{{ prefix }}{{ region }}-ec2-{{ appName }}-web-server"
+      env: "{{ env }}"
+      app: "{{ appName }}"
+    user_data: "{{ userData }}"
+    instance_profile_name: "{{ simple_ec2_instance_profile_name }}"
+    volumes:
+    - device_name: "{{volumeDeviceName}}"
+      volume_size: "{{volumeSize}}"
+      delete_on_termination: true
+  register: ec2
+  when: "{{ not tear_down }}"
+- name: Add all instance public IPs to host group
+  # There can be no spaces between group names
+  add_host: hostname={{ item.public_dns_name }} groups=ec2hosts-{{ appName }},ec2hosts zone={{ item.placement }}
+  with_items: "{{ ec2.instances }}"
+  when: "{{ not tear_down }}"
+- name: Add all existing instance public IPs to host group
+  # There can be no spaces between group names
+  add_host: hostname={{ item.public_dns_name }} groups=ec2hosts-{{ appName }},ec2hosts zone={{ item.placement }}
+  with_items: "{{ ec2.tagged_instances }}"
+  when: "{{ not tear_down }}"
+- name: Add existing instances to ELB
+  local_action:
+    module: ec2_elb
+    instance_id: "{{ item.id }}"
+    state: present
+    region: "{{ region }}"
+    ec2_elbs: "{{ simple_ec2_elb_name }}"
+  with_items: "{{ ec2.tagged_instances }}"
+  when: "{{ simple_ec2_elb_name is defined }}"
+  ignore_errors: yes
+- name: Add new instances to ELB
+  local_action:
+    module: ec2_elb
+    instance_id: "{{ item.id }}"
+    state: present
+    region: "{{ region }}"
+    ec2_elbs: "{{ simple_ec2_elb_name }}"
+  with_items: "{{ ec2.instances }}"
+  when: "{{ simple_ec2_elb_name is defined }}"
+  ignore_errors: yes
+- name: Wait for SSH or powershell port to come up
+  wait_for: host={{ item.public_dns_name }} port={{ansibleConfigurationPort}} delay=60 timeout=1200 state=started
+  with_items: "{{ ec2.instances }}"
+  when: "{{ not tear_down }}"
+
+  # Have to do this step last because security groups can't be deleted until
+  # their associated instances are deleted.
+- name: "Tear down security groups when 'tear_down'"
+  ec2_group:
+    name: "{{ item }}"
+    description: description is required
+    region: "{{ region }}"
+    state: absent
+  with_items:
+    # These must match the above security group names exactly
+    - "{{ prefix }}{{ region }}-sg-{{ appName }}-web"
+  when: "{{ tear_down }}"

@@ -1,0 +1,12 @@
+---
+- name: Install docker-py
+  pip: name=docker-py
+- name: "Install docker"
+  remote_user: ec2-user
+  yum:
+    name: docker
+    state: latest
+- name: Start Docker service
+  service:
+    name: docker
+    state: started

@@ -1,0 +1,14 @@
+---
+ami_id: "{{ default_amazon_ami }}"
+instance_type: t2.micro
+simple_ec2_server_count: 1
+ansibleConfigurationPort: 22
+deleteExisting: false
+tear_down: false
+# Linux default volume name
+volumeDeviceName: /dev/xvda
+volumeSize: 30
+userData:
+useEnv: false
+simple_ec2_instance_profile_name:
+simple_ec2_security_group_ports:

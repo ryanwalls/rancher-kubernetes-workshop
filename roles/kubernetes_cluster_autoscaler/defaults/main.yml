@@ -1,0 +1,6 @@
+---
+kubernetes_cluster_autoscaler_name: cluster-autoscalar
+kubernetes_cluster_autoscaler_image: gcr.io/google_containers/cluster-autoscaler
+kubernetes_cluster_autoscaler_core_asg: "{{ env }}-kubernetes-cluster-asg"
+kubernetes_cluster_autoscaler_core_asg_min: 2
+kubernetes_cluster_autoscaler_core_asg_max: 25

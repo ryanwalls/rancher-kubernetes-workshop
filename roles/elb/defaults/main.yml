@@ -1,0 +1,6 @@
+---
+elb_instance_port:
+elb_zones: [us-west-2a, us-west-2b]
+elb_allow_http: false
+elb_ssl_cert_arn: 
+tear_down: false

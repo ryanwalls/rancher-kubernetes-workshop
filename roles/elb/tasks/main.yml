@@ -1,0 +1,73 @@
+---
+- name: Create elb security group
+  ec2_group:
+    name: "{{env}}-{{ region }}-sg-{{ elb_app_name }}-elb"
+    description: Security group for {{ elb_app_name }} elb
+    region: "{{ region }}"
+    rules:
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0
+    rules_egress:
+      - proto: all
+        from_port: all
+        to_port: all
+        cidr_ip: 0.0.0.0/0
+  register: elb_security_group
+- name: Open port 80 on ELB security group
+  ec2_group:
+    name: "{{env}}-{{ region }}-sg-{{ elb_app_name }}-elb"
+    description: Security group for {{ elb_app_name }} elb
+    region: "{{ region }}"
+    purge_rules: no
+    purge_rules_egress: no
+    rules:
+      - proto: tcp
+        from_port: 80
+        to_port: 80
+        cidr_ip: 0.0.0.0/0
+  when: "{{ elb_allow_http }}"
+- name: Setting up Elastic Load Balancer and listen on 443
+  ec2_elb_lb:
+    name: "{{ env }}-{{ region }}-{{ elb_app_name }}-elb"
+    state: "{{ (tear_down and env == 'dev') | ternary('absent', 'present') }}"
+    connection_draining_timeout: 60
+    cross_az_load_balancing: "yes"
+    region: "{{ region }}"
+    zones: "{{ elb_zones }}"
+    security_group_ids: "{{elb_security_group.group_id}}"
+    idle_timeout: 600 # seconds
+    listeners:
+      - protocol: ssl
+        load_balancer_port: 443
+        instance_protocol: tcp
+        instance_port: "{{ elb_instance_port }}"
+        ssl_certificate_id: "{{ elb_ssl_cert_arn }}"
+  when: not {{ elb_allow_http }}
+  register: secure_elb
+- name: Setting up Elastic Load Balancer and listen on 443 and 80
+  ec2_elb_lb:
+    name: "{{ env }}-{{ region }}-{{ elb_app_name }}-elb"
+    state: "{{ (tear_down and env == 'dev') | ternary('absent', 'present') }}"
+    connection_draining_timeout: 60
+    cross_az_load_balancing: "yes"
+    region: "{{ region }}"
+    zones: "{{ elb_zones }}"
+    security_group_ids: "{{elb_security_group.group_id}}"
+    idle_timeout: 600 # seconds
+    listeners:
+      - protocol: ssl
+        load_balancer_port: 443
+        instance_protocol: tcp
+        instance_port: "{{ elb_instance_port }}"
+        ssl_certificate_id: "{{ elb_ssl_cert_arn }}"
+      - protocol: tcp
+        load_balancer_port: 80
+        instance_protocol: tcp
+        instance_port: "{{ elb_instance_port }}"
+  when: "{{ elb_allow_http }}"
+  register: unsecure_elb
+- name: Set the elb variable
+  set_fact:
+    elb: "{{ secure_elb if secure_elb.elb is defined else unsecure_elb }}"
