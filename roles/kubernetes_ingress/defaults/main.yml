@@ -1,6 +1,6 @@
 ---
 kubernetes_ingress_dns_suffix: "-{{ env }}"
-kubernetes_ingress_domain:
+kubernetes_ingress_domain: "{{ default_hosted_zone }}"
 kubernetes_ingress_namespace: default
 kubernetes_ingress_template:
   apiVersion: extensions/v1beta1

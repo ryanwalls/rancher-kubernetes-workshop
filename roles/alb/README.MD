@@ -1,5 +1,4 @@
 # alb ansible role
-
 Role to spin up an ALB and associated security group.
 
 ## Variables
@@ -13,8 +12,9 @@ requests to ([us-west-2a, us-west-2b])
 * `env` - the environment the app infrastructure will be created in e.g. `dev`, `qa`, `prod` (dev)
 * `tear_down` - if true, will tear down everything this role creates (false)
 * `alb_app_name` - the name of the app to spin up, this will be used to create names for security groups and instances.
+* `alb_instance_port` - the port to open to the outside world (9000)
+* `alb_zones` - AWS zones where servers will be created, ([us-west-2a, us-west-2b])
 * `alb_default_action_target_group` - target group to forward requests to by default
-* `alb_certificate_arn` - ssl certificate arn (arn:aws:iam::763396238289:server-certificate/3dsim-web-cert)
 
 ### Registered Output Variables
 * 'alb' - object describing the ALB that was created
