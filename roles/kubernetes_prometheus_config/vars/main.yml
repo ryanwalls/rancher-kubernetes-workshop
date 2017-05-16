@@ -7,6 +7,6 @@
     qa:
       critical: qa
       non_critical: qa
-    test:
+    slc:
       critical: qa
       non_critical: qa

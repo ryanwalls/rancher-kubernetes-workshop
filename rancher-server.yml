@@ -26,7 +26,7 @@
       - { role: simple_ec2,
           ami_id: '{{ default_amazon_ami }}',
           appName: rancher,
-          instance_type: 'm4.xlarge',
+          instance_type: 't2.xlarge',
           useEnv: true,
           volumeSize: 30,
           simple_ec2_instance_profile_name: "{{ rancher_iam_profile_role_name }}",
